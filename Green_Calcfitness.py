@@ -167,6 +167,7 @@ def green_local_search(newpop, ls_frequency, factory_job_set, num_factory):
                 newpop[i][l][:-2] = ls_pop[i][l][0][:-2]
                 ls_pop[i][l][j][-2],ls_pop[i][l][j][-1] = TCE(len(factory_job_set[i]), num_machine, ls_pop[i][l][j][0:-2], test_data, v)
             select_ls_pop[i][l] = sorted(ls_pop[i][l],key= lambda x:x[-2])[0]
+        select_ls_pop[i] = sorted(select_ls_pop[i],key= lambda x:x[-2])
     return select_ls_pop
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -189,25 +190,28 @@ def Green_Bayes_net(pop_gen, ls_frequency):
         prob_mat_first = Bayes_update(Mat_pop, factory_job_set, num_factory)
         newpop = Green_New_pop(prob_mat_first, num_factory, factory_job_set, Mat_pop)
         ls_pop = green_local_search(newpop, ls_frequency, factory_job_set, num_factory)
-        for i in range(num_factory):
-            for j in range(20):
-                fitness[i][j], green_fitness[i][j] = TCE(len(factory_job_set[i]), num_machine, ls_pop[i][j], test_data, v)
-            for j in range(20):
-                min_index[i][j] = np.argsort(fitness[i][:])[0]
-                min_fitness[i][j] = fitness[i][min_index[i][j]]
-                min_fitness_green[i][j] = green_fitness[i][min_index[i][j]]
+        # for i in range(num_factory):
+        #     for j in range(20):
+        #         fitness[i][j] = ls_pop[i][]
+        #         green_fitness[i][j] = TCE(len(factory_job_set[i]), num_machine, ls_pop[i][j], test_data, v)
+        #     for j in range(20):
+        #         min_index[i][j] = np.argsort(fitness[i][:])[0]
+        #         min_fitness[i][j] = fitness[i][min_index[i][j]]
+        #         min_fitness_green[i][j] = green_fitness[i][min_index[i][j]]
         for i in range(num_factory):
             temp = len(factory_job_set[i])
-            for k in range(20):
-                for j in range(100)[::-1]:
-                    if float(min_fitness[i][k]) < float(Mat_pop[i][j][temp]) or float(min_fitness_green[i][k]) < float(Mat_pop[i][j][temp+1]):
-                        temp_list = ls_pop[i][min_index[i][k]]
-                        temp_list.append(min_fitness[i][k])
-                        temp_list.append(min_fitness_green[i][k])
+            k_index = -1
+            for k in range(19,-1,-1):
+                k_index += 1
+                for j in range(99-k_index,-1,-1):
+                    if float(ls_pop[i][k][-2]) < float(Mat_pop[i][j][temp]) or float(ls_pop[i][k][-1]) < float(Mat_pop[i][j][temp+1]):
+                        temp_list = ls_pop[i][k]
                         for l in range(len(factory_job_set[i]) + 2):
                             Mat_pop[i][j][l] = temp_list[l]
-                        Mat_pop[i] = sorted(Mat_pop[i], key= lambda x:x[-2])
+                        temp_list = []
                         break
+            Mat_pop[i] = sorted(Mat_pop[i], key= lambda x:x[-2])
+
         temp_non_dominated = select_non_dominated_pop(num_factory, factory_job_set, Mat_pop)
         for i in range(num_factory):
             for j in range(len(temp_non_dominated[i])):
@@ -218,6 +222,7 @@ def Green_Bayes_net(pop_gen, ls_frequency):
                 if individual not in Pareto_gen[i][gen]:
                     Pareto_gen[i][gen].append(individual)
             Pareto_num[i][gen] = len(Pareto_gen[i][gen])
+        non_dominated_pop = [[] for k in range(num_factory)]
             #print('代数：%s'%gen,Pareto_gen[0])
             # the_best[i][gen][0] = Mat_pop[i][0][temp]
             # the_worst[i][gen][0] = Mat_pop[i][-1][temp]
