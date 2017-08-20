@@ -72,7 +72,9 @@ def green_initial_Bayes(num_machine, num_factory, factory_job_set, test_data):
                             b_non_dominated = False
                             break
             if b_non_dominated == True:
-                non_dominated_pop[i].append(Mat_pop[i][j])
+                if Mat_pop[i][j] not in non_dominated_pop[i]:
+                    non_dominated_pop[i].append(Mat_pop[i][j])
+
     return Mat_pop[:][0:100], non_dominated_pop
 
 def select_non_dominated_pop(num_factory, factory_job_set, Mat_pop):
@@ -90,7 +92,8 @@ def select_non_dominated_pop(num_factory, factory_job_set, Mat_pop):
                             b_non_dominated = False
                             break
             if b_non_dominated == True:
-                temp_non_dominated_pop[i].append(Mat_pop[i][j])
+                if Mat_pop[i][j] not in temp_non_dominated_pop[i]:
+                    temp_non_dominated_pop[i].append(Mat_pop[i][j])
     return temp_non_dominated_pop
 
 
@@ -183,21 +186,11 @@ def Green_Bayes_net(pop_gen, ls_frequency):
     the_best = [[[0,0] for i in range(pop_gen)] for j in range(num_factory)]
     the_worst = [[[0,0] for i in range(pop_gen)] for j in range(num_factory)]
     temp_list = []
-    Pareto_num = [[0 for i in range(pop_gen)] for j in range(num_factory)]
     data = [[] for i in range(num_factory)]
-    Pareto_gen = [[[] for i in range(pop_gen) ]for k in range(num_factory)]
     for gen in range(pop_gen):
         prob_mat_first = Bayes_update(Mat_pop, factory_job_set, num_factory)
         newpop = Green_New_pop(prob_mat_first, num_factory, factory_job_set, Mat_pop)
         ls_pop = green_local_search(newpop, ls_frequency, factory_job_set, num_factory)
-        # for i in range(num_factory):
-        #     for j in range(20):
-        #         fitness[i][j] = ls_pop[i][]
-        #         green_fitness[i][j] = TCE(len(factory_job_set[i]), num_machine, ls_pop[i][j], test_data, v)
-        #     for j in range(20):
-        #         min_index[i][j] = np.argsort(fitness[i][:])[0]
-        #         min_fitness[i][j] = fitness[i][min_index[i][j]]
-        #         min_fitness_green[i][j] = green_fitness[i][min_index[i][j]]
         for i in range(num_factory):
             temp = len(factory_job_set[i])
             k_index = -1
@@ -215,64 +208,11 @@ def Green_Bayes_net(pop_gen, ls_frequency):
         temp_non_dominated = select_non_dominated_pop(num_factory, factory_job_set, Mat_pop)
         for i in range(num_factory):
             for j in range(len(temp_non_dominated[i])):
-                non_dominated_pop[i].append(temp_non_dominated[i][j])
+                if temp_non_dominated[i][j] not in non_dominated_pop[i]:
+                    non_dominated_pop[i].append(temp_non_dominated[i][j])
         non_dominated_pop = select_non_dominated_pop(num_factory, factory_job_set, non_dominated_pop)
-        for i in range(num_factory):
-            for individual in non_dominated_pop[i]:
-                if individual not in Pareto_gen[i][gen]:
-                    Pareto_gen[i][gen].append(individual)
-            Pareto_num[i][gen] = len(Pareto_gen[i][gen])
-        non_dominated_pop = [[] for k in range(num_factory)]
-            #print('代数：%s'%gen,Pareto_gen[0])
-            # the_best[i][gen][0] = Mat_pop[i][0][temp]
-            # the_worst[i][gen][0] = Mat_pop[i][-1][temp]
-            # the_best[i][gen][1] = Mat_pop[i][0][temp+1]
-            # the_worst[i][gen][1] = Mat_pop[i][-1][temp+1]
-    return the_best,the_worst, Pareto_num, Pareto_gen
-start_time = time.clock()
-the_best, the_worst ,Pareto_num, Pareto_gen= Green_Bayes_net(pop_gen, ls_frequency)
-end_time = time.clock()
-run_time = end_time - start_time
-gen = [i for i in range(pop_gen)]
-X = [[[]for j in range(2)]for i in range(num_factory)]
-Y = [[[]for j in range(2)]for i in range(num_factory)]
-for i in range(num_factory):
-    for j in range(2):
-        for l in range(len(Pareto_gen[i][j*(pop_gen-1)])):
-            X[i][j].append(int(Pareto_gen[i][j*(pop_gen-1)][l][-2]))
-            Y[i][j].append(int(Pareto_gen[i][j*(pop_gen-1)][l][-1]))
-print(X[0][0])
-print(Y[0][0])
-fig = plt.figure()
-#for i, factory in enumerate(range(num_factory)):
-ax = fig.add_subplot(111)
-# for j in range(Pareto_num[i][0]):
-ax.scatter(X[0][0], Y[0][0])
-#ax.scatter(Pareto_gen[i][-1][:][-2], Pareto_gen[i][-1][:][-1],'gD')
-ax.set_xlabel(r'gen')
-ax.set_ylabel(r'fitness')
-ax.set_title(r'Factory')
-ax.grid()
-ax.legend()
-#fig.suptitle('$Distributed$'+' '+'$flowshop$'+' '+'$scheduling$'+' '+'$problem$'+'\nRun:%.2fs'%run_time)
-plt.show()
+    return non_dominated_pop
 
-# temp1 = []
-# temp2 = []
-# for i in range(pop_gen):
-#     temp1.append(the_best[0][i][0])
-#     temp2.append(the_best[0][i][1])
-# ax = Axes3D(fig)
-# for i in gen:
-#    # for j in Pareto_num[0]:
-#         for k in range(Pareto_num[0][i]):
-#             ax.scatter(i, Pareto_gen[0][i][k][-2], Pareto_gen[0][i][k][-1],'r')
-# ax.set_xlabel(r'gen')
-# ax.set_ylabel(r'fitness')
-# ax.set_zlabel(r'Carbon')
-# ax.legend()
-# ax.set_title(r'Multive—object')
-# plt.show()
-# print(Pareto_num)
-#print(Pareto_gen[0][-1])
-#print(Pareto_gen[1][-1])
+non_dominated_pop = Green_Bayes_net(pop_gen, ls_frequency)
+for i in non_dominated_pop:
+    print(i)
